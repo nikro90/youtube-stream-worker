@@ -1,0 +1,24 @@
+{
+    "name": "youtube-stream-worker",
+    "version": "1.0.0",
+    "description": "24/7 YouTube Radio Stream Worker for GitHub Actions",
+    "main": "stream.js",
+    "scripts": {
+        "start": "node stream.js",
+        "test": "echo 'Stream worker ready'"
+    },
+    "keywords": [
+        "youtube",
+        "stream",
+        "radio",
+        "24/7"
+    ],
+    "author": "",
+    "license": "MIT",
+    "dependencies": {
+        "puppeteer": "^24.0.0"
+    },
+    "engines": {
+        "node": ">=18.0.0"
+    }
+}

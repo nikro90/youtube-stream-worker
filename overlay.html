@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1920, height=1080">
+    <title>Neural RadioStream - 24/7 AI DJ</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            width: 1920px;
+            height: 1080px;
+            overflow: hidden;
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 50%, #16213e 100%);
+        }
+
+        /* Animated Background */
+        .bg-particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 0;
+        }
+
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: rgba(168, 85, 247, 0.4);
+            border-radius: 50%;
+            animation: float 15s infinite ease-in-out;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) translateX(0); opacity: 0.3; }
+            50% { transform: translateY(-100px) translateX(50px); opacity: 0.8; }
+        }
+
+        /* Gradient Orbs */
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.5;
+            animation: pulse-orb 8s infinite ease-in-out;
+        }
+
+        .orb-1 {
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, #a855f7 0%, transparent 70%);
+            top: -200px;
+            right: -100px;
+        }
+
+        .orb-2 {
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, #ec4899 0%, transparent 70%);
+            bottom: -150px;
+            left: -100px;
+            animation-delay: -4s;
+        }
+
+        .orb-3 {
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, #06b6d4 0%, transparent 70%);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            animation-delay: -2s;
+        }
+
+        @keyframes pulse-orb {
+            0%, 100% { transform: scale(1); opacity: 0.4; }
+            50% { transform: scale(1.2); opacity: 0.6; }
+        }
+
+        /* Main Container */
+        .container {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            padding: 60px;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .live-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.5);
+            padding: 8px 16px;
+            border-radius: 20px;
+        }
+
+        .live-dot {
+            width: 10px;
+            height: 10px;
+            background: #ef4444;
+            border-radius: 50%;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .live-text {
+            color: #ef4444;
+            font-weight: 600;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .branding {
+            margin-left: 20px;
+        }
+
+        .branding h1 {
+            font-size: 32px;
+            font-weight: 800;
+            color: white;
+        }
+
+        .branding span {
+            background: linear-gradient(90deg, #a855f7, #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .branding p {
+            color: rgba(255,255,255,0.5);
+            font-size: 14px;
+            margin-top: 4px;
+        }
+
+        /* Center Logo */
+        .center-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .logo-container {
+            position: relative;
+            width: 300px;
+            height: 300px;
+        }
+
+        .logo-glow {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(168, 85, 247, 0.4) 0%, transparent 70%);
+            animation: logo-pulse 3s infinite ease-in-out;
+        }
+
+        @keyframes logo-pulse {
+            0%, 100% { transform: scale(1); opacity: 0.4; }
+            50% { transform: scale(1.1); opacity: 0.7; }
+        }
+
+        .logo {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 200px;
+            height: 200px;
+            background: linear-gradient(135deg, #1a1a2e, #2d2d44);
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border: 3px solid rgba(168, 85, 247, 0.5);
+            box-shadow: 0 0 60px rgba(168, 85, 247, 0.3);
+        }
+
+        .logo-icon {
+            font-size: 48px;
+            margin-bottom: 8px;
+        }
+
+        .logo-text {
+            font-size: 24px;
+            font-weight: 800;
+            color: white;
+        }
+
+        .logo-subtitle {
+            font-size: 12px;
+            color: #a855f7;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+        }
+
+        /* Audio Visualizer */
+        .visualizer {
+            display: flex;
+            align-items: flex-end;
+            gap: 4px;
+            height: 60px;
+            margin-top: 40px;
+        }
+
+        .bar {
+            width: 6px;
+            background: linear-gradient(to top, #a855f7, #ec4899);
+            border-radius: 3px;
+            animation: visualize 0.8s infinite ease-in-out;
+        }
+
+        @keyframes visualize {
+            0%, 100% { height: 20px; }
+            50% { height: 60px; }
+        }
+
+        /* Now Playing */
+        .now-playing {
+            position: absolute;
+            bottom: 120px;
+            left: 60px;
+            right: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .track-info {
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 20px 30px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .track-label {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .track-name {
+            color: white;
+            font-size: 24px;
+            font-weight: 600;
+            margin-top: 4px;
+        }
+
+        .track-artist {
+            color: #a855f7;
+            font-size: 16px;
+            margin-top: 2px;
+        }
+
+        .mini-visualizer {
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            height: 30px;
+        }
+
+        .mini-bar {
+            width: 4px;
+            background: linear-gradient(to top, #a855f7, #ec4899);
+            border-radius: 2px;
+            animation: visualize 0.6s infinite ease-in-out;
+        }
+
+        /* AI Activity Log */
+        .ai-log {
+            position: absolute;
+            bottom: 120px;
+            right: 60px;
+            width: 400px;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 20px;
+            max-height: 200px;
+            overflow: hidden;
+        }
+
+        .ai-log-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .ai-indicator {
+            width: 8px;
+            height: 8px;
+            background: #10b981;
+            border-radius: 50%;
+            animation: blink 2s infinite;
+        }
+
+        .ai-log-header span {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .log-entries {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .log-entry {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.6);
+            animation: fade-in 0.5s ease-out;
+        }
+
+        @keyframes fade-in {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .log-time {
+            color: #a855f7;
+            font-family: monospace;
+        }
+
+        .log-message {
+            flex: 1;
+        }
+
+        /* Footer Stats */
+        .footer {
+            position: absolute;
+            bottom: 40px;
+            left: 60px;
+            right: 60px;
+            display: flex;
+            justify-content: center;
+            gap: 60px;
+        }
+
+        .stat {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 12px;
+        }
+
+        .stat-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 4px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Background Effects -->
+    <div class="bg-particles" id="particles"></div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="live-badge">
+                <div class="live-dot"></div>
+                <span class="live-text">Live</span>
+            </div>
+            <div class="branding">
+                <h1>24/7 <span>AI DJ</span></h1>
+                <p>Powered by Groq LLaMA • Neural RadioStream</p>
+            </div>
+        </div>
+
+        <!-- Center Logo -->
+        <div class="center-content">
+            <div class="logo-container">
+                <div class="logo-glow"></div>
+                <div class="logo">
+                    <div class="logo-icon">🎵</div>
+                    <div class="logo-text">NEURAL</div>
+                    <div class="logo-subtitle">RadioStream</div>
+                </div>
+            </div>
+            
+            <!-- Visualizer -->
+            <div class="visualizer" id="visualizer"></div>
+        </div>
+
+        <!-- Now Playing -->
+        <div class="now-playing">
+            <div class="track-info">
+                <div>
+                    <div class="track-label">Now Playing</div>
+                    <div class="track-name" id="trackName">Loading...</div>
+                    <div class="track-artist" id="trackArtist">AI DJ selecting track...</div>
+                </div>
+                <div class="mini-visualizer" id="miniVisualizer"></div>
+            </div>
+        </div>
+
+        <!-- AI Activity Log -->
+        <div class="ai-log">
+            <div class="ai-log-header">
+                <div class="ai-indicator"></div>
+                <span>AI DJ Activity</span>
+            </div>
+            <div class="log-entries" id="logEntries">
+                <div class="log-entry">
+                    <span class="log-time">--:--</span>
+                    <span class="log-message">Initializing AI DJ...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <div class="stat">
+                <div class="stat-value" id="viewerCount">0</div>
+                <div>Viewers</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="trackCount">0</div>
+                <div>Tracks Today</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="uptime">00:00:00</div>
+                <div>Stream Uptime</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const API_URL = window.API_URL || 'https://youtube-streams.onrender.com';
+        
+        // Generate particles
+        const particlesContainer = document.getElementById('particles');
+        for (let i = 0; i < 50; i++) {
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+            particle.style.left = Math.random() * 100 + '%';
+            particle.style.top = Math.random() * 100 + '%';
+            particle.style.animationDelay = Math.random() * 15 + 's';
+            particle.style.animationDuration = (10 + Math.random() * 10) + 's';
+            particlesContainer.appendChild(particle);
+        }
+
+        // Generate visualizer bars
+        const visualizer = document.getElementById('visualizer');
+        const miniVisualizer = document.getElementById('miniVisualizer');
+        
+        for (let i = 0; i < 40; i++) {
+            const bar = document.createElement('div');
+            bar.className = 'bar';
+            bar.style.animationDelay = (i * 0.05) + 's';
+            bar.style.animationDuration = (0.4 + Math.random() * 0.6) + 's';
+            visualizer.appendChild(bar);
+        }
+
+        for (let i = 0; i < 10; i++) {
+            const bar = document.createElement('div');
+            bar.className = 'mini-bar';
+            bar.style.animationDelay = (i * 0.08) + 's';
+            bar.style.animationDuration = (0.3 + Math.random() * 0.5) + 's';
+            miniVisualizer.appendChild(bar);
+        }
+
+        // Track uptime
+        let uptimeSeconds = 0;
+        setInterval(() => {
+            uptimeSeconds++;
+            const hrs = Math.floor(uptimeSeconds / 3600);
+            const mins = Math.floor((uptimeSeconds % 3600) / 60);
+            const secs = uptimeSeconds % 60;
+            document.getElementById('uptime').textContent = 
+                `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+        }, 1000);
+
+        // Add log entry
+        function addLog(message) {
+            const logEntries = document.getElementById('logEntries');
+            const time = new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+            
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.innerHTML = `<span class="log-time">${time}</span><span class="log-message">${message}</span>`;
+            
+            logEntries.insertBefore(entry, logEntries.firstChild);
+            
+            // Keep only last 5 entries
+            while (logEntries.children.length > 5) {
+                logEntries.removeChild(logEntries.lastChild);
+            }
+        }
+
+        // Fetch current track from API
+        async function fetchCurrentTrack() {
+            try {
+                const response = await fetch(`${API_URL}/status`);
+                const streams = await response.json();
+                
+                if (streams && streams.length > 0) {
+                    const stream = streams[0];
+                    document.getElementById('trackName').textContent = stream.current_genre || 'LoFi Beats';
+                    document.getElementById('trackArtist').textContent = `Genre: ${stream.current_genre} • ${stream.status}`;
+                    
+                    // Simulate viewer count
+                    document.getElementById('viewerCount').textContent = Math.floor(Math.random() * 100) + 10;
+                }
+            } catch (e) {
+                console.log('API not available, using demo mode');
+            }
+        }
+
+        // Demo mode - rotate messages
+        const demoMessages = [
+            'Analyzing chat engagement...',
+            'Selected genre: LoFi for focus time',
+            'Queue updated with 5 new tracks',
+            'Sentiment analysis: Positive 78%',
+            'Switching to Ambient for evening',
+            'AI recommendation processed',
+            'Playlist optimized for current hour',
+        ];
+
+        let messageIndex = 0;
+        let trackCount = 0;
+
+        setInterval(() => {
+            addLog(demoMessages[messageIndex % demoMessages.length]);
+            messageIndex++;
+            
+            if (messageIndex % 3 === 0) {
+                trackCount++;
+                document.getElementById('trackCount').textContent = trackCount;
+            }
+        }, 8000);
+
+        // Initial fetch
+        fetchCurrentTrack();
+        setInterval(fetchCurrentTrack, 30000);
+        addLog('AI DJ initialized successfully');
+    </script>
+</body>
+</html>

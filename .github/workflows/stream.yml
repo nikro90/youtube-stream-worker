@@ -1,0 +1,102 @@
+name: 24/7 YouTube Stream
+
+on:
+  # Manual trigger from GitHub UI
+  workflow_dispatch:
+    inputs:
+      stream_duration:
+        description: 'Duration in hours (max 5.5)'
+        required: false
+        default: '5.5'
+      playlist_url:
+        description: 'YouTube playlist URL to stream'
+        required: false
+        default: ''
+  
+  # Trigger from external API (Backend Repo A)
+  repository_dispatch:
+    types: [start-stream]
+  
+  # Auto-restart: runs every 5.5 hours
+  schedule:
+    - cron: '0 */6 * * *'  # Every 6 hours
+
+jobs:
+  stream:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350  # 5 hours 50 minutes max
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            ffmpeg \
+            pulseaudio \
+            xvfb \
+            libnss3 \
+            libatk1.0-0 \
+            libatk-bridge2.0-0 \
+            libcups2 \
+            libdrm2 \
+            libxkbcommon0 \
+            libxcomposite1 \
+            libxdamage1 \
+            libxrandr2 \
+            libgbm1 \
+            libasound2 \
+            libpangocairo-1.0-0 \
+            libgtk-3-0 \
+            fonts-liberation \
+            libappindicator3-1 \
+            xdg-utils
+      
+      - name: Install npm dependencies
+        run: npm ci
+      
+      - name: Start virtual display
+        run: |
+          Xvfb :99 -screen 0 1920x1080x24 &
+          echo "DISPLAY=:99" >> $GITHUB_ENV
+      
+      - name: Start PulseAudio
+        run: |
+          pulseaudio --start --exit-idle-time=-1
+          pacmd load-module module-virtual-sink sink_name=v1
+          pacmd set-default-sink v1
+          pacmd set-default-source v1.monitor
+      
+      - name: Run YouTube Stream
+        env:
+          YOUTUBE_STREAM_KEY: ${{ secrets.YOUTUBE_STREAM_KEY }}
+          STREAM_URL: ${{ secrets.STREAM_URL || 'rtmp://a.rtmp.youtube.com/live2' }}
+          PLAYLIST_URL: ${{ github.event.inputs.playlist_url || secrets.DEFAULT_PLAYLIST_URL }}
+          OVERLAY_TITLE: ${{ secrets.OVERLAY_TITLE || 'YouTube Radio 24/7' }}
+          STREAM_DURATION_HOURS: ${{ github.event.inputs.stream_duration || '5.5' }}
+          BACKEND_API_URL: ${{ secrets.BACKEND_API_URL }}
+        run: |
+          echo "🎵 Starting YouTube 24/7 Radio Stream..."
+          echo "⏱️ Duration: ${STREAM_DURATION_HOURS} hours"
+          echo "📺 Stream URL: ${STREAM_URL}"
+          node stream.js
+      
+      - name: Trigger next stream cycle
+        if: always()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "🔄 Triggering next stream cycle..."
+          curl -X POST \
+            -H "Accept: application/vnd.github.v3+json" \
+            -H "Authorization: token $GITHUB_TOKEN" \
+            https://api.github.com/repos/${{ github.repository }}/dispatches \
+            -d '{"event_type":"start-stream"}' || true
