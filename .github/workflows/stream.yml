@@ -60,7 +60,7 @@ jobs:
             xdg-utils
       
       - name: Install npm dependencies
-        run: npm ci
+        run: npm install
       
       - name: Start virtual display
         run: |
