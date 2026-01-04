@@ -105,9 +105,17 @@ async function launchBrowser() {
 
     const page = await browser.newPage();
 
-    // Navigate to overlay
+    // Set longer timeout for navigation
+    page.setDefaultNavigationTimeout(60000);
+
+    // Navigate to overlay - use 'domcontentloaded' to not wait for all resources
     const overlayUrl = `http://localhost:${config.localPort}?title=${encodeURIComponent(config.overlayTitle)}`;
-    await page.goto(overlayUrl, { waitUntil: 'networkidle0' });
+    console.log(`🌐 Navigating to: ${overlayUrl}`);
+
+    await page.goto(overlayUrl, { waitUntil: 'domcontentloaded' });
+
+    // Wait a bit for animations to initialize
+    await new Promise(resolve => setTimeout(resolve, 2000));
 
     console.log('✅ Overlay loaded successfully');
 
