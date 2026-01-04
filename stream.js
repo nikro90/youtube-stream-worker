@@ -92,14 +92,14 @@ async function launchBrowser() {
             '--disable-dev-shm-usage',
             '--disable-accelerated-2d-canvas',
             '--disable-gpu',
-            '--window-size=1920,1080',
+            '--window-size=1280,720',
             '--autoplay-policy=no-user-gesture-required',
             '--use-fake-ui-for-media-stream',
             '--enable-audio-service-sandbox=false'
         ],
         defaultViewport: {
-            width: 1920,
-            height: 1080
+            width: 1280,
+            height: 720
         }
     });
 
@@ -130,27 +130,28 @@ function startFFmpegStream() {
 
     const rtmpUrl = `${config.streamUrl}/${config.streamKey}`;
 
-    // FFmpeg command for capturing and streaming
+    // FFmpeg command optimized for GitHub Actions (limited CPU)
     const ffmpegArgs = [
-        // Input: X11 display capture
+        // Input: X11 display capture - lower resolution and framerate
         '-f', 'x11grab',
-        '-video_size', '1920x1080',
-        '-framerate', '30',
+        '-video_size', '1280x720',
+        '-framerate', '24',
         '-i', ':99',
 
         // Input: PulseAudio capture
         '-f', 'pulse',
         '-i', 'default',
 
-        // Video encoding
+        // Video encoding - optimized for low CPU
         '-c:v', 'libx264',
-        '-preset', 'veryfast',
+        '-preset', 'ultrafast',
         '-tune', 'zerolatency',
-        '-b:v', '4500k',
-        '-maxrate', '4500k',
-        '-bufsize', '9000k',
+        '-b:v', '2000k',
+        '-maxrate', '2500k',
+        '-bufsize', '4000k',
         '-pix_fmt', 'yuv420p',
-        '-g', '60',
+        '-g', '48',
+        '-threads', '2',
 
         // Audio encoding
         '-c:a', 'aac',
