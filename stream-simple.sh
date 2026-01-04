@@ -3,8 +3,8 @@
 # ============================================================
 # YouTube 24/7 Radio - Simple FFmpeg Streaming
 # ============================================================
-# This script streams audio from a YouTube playlist with a 
-# static background image to RTMP (YouTube/Twitch)
+# Streams a static image with audio from YouTube to RTMP
+# Uses direct yt-dlp audio streaming without buffering
 # ============================================================
 
 set -e
@@ -37,42 +37,43 @@ DURATION_SECONDS=$(echo "$DURATION_HOURS * 3600" | bc)
 # Create RTMP URL
 RTMP_FULL="${STREAM_URL}/${STREAM_KEY}"
 
-# Create a named pipe for audio streaming
-AUDIO_PIPE="/tmp/audio_pipe"
-rm -f $AUDIO_PIPE
-mkfifo $AUDIO_PIPE
+# Get first video URL from playlist
+echo "🔍 Fetching video from playlist..."
+VIDEO_URL=$(yt-dlp --flat-playlist --print url "$PLAYLIST_URL" 2>/dev/null | head -n 1)
 
-# Function to continuously stream audio from YouTube playlist
-stream_audio() {
-    echo "🎵 Starting audio streamer..."
-    while true; do
-        # Get random video from playlist and stream audio
-        yt-dlp \
-            --flat-playlist \
-            --print url \
-            "$PLAYLIST_URL" 2>/dev/null | \
-        shuf | \
-        while read -r video_url; do
-            echo "🎶 Now playing: $video_url"
-            yt-dlp \
-                -f 'bestaudio' \
-                -o - \
-                "$video_url" 2>/dev/null || continue
-        done
-    done > $AUDIO_PIPE &
-    AUDIO_PID=$!
-    echo "🎵 Audio streamer PID: $AUDIO_PID"
-}
+if [ -z "$VIDEO_URL" ]; then
+    echo "❌ No videos found in playlist, trying a public lo-fi stream..."
+    # Fallback to a known working lofi stream
+    VIDEO_URL="https://www.youtube.com/watch?v=jfKfPfyJRdk"
+fi
 
-# Function to stream video + audio to RTMP
-stream_video() {
-    echo "🎬 Starting FFmpeg stream..."
-    
+echo "🎶 Selected video: $VIDEO_URL"
+
+# Get the actual audio stream URL
+echo "🔗 Getting audio stream URL..."
+AUDIO_URL=$(yt-dlp -f 'bestaudio' --get-url "$VIDEO_URL" 2>/dev/null)
+
+if [ -z "$AUDIO_URL" ]; then
+    echo "❌ Could not get audio URL. YouTube may be blocking. Using silent audio."
+    USE_SILENT=true
+else
+    echo "✅ Audio URL obtained"
+    USE_SILENT=false
+fi
+
+# Start streaming
+echo ""
+echo "🎬 Starting FFmpeg stream..."
+echo "⏰ Will run for ${DURATION_HOURS} hours (${DURATION_SECONDS}s)"
+echo ""
+
+if [ "$USE_SILENT" = true ]; then
+    # Stream with silent audio (for testing connectivity)
     ffmpeg \
         -re \
         -loop 1 \
         -i "$BACKGROUND_IMAGE" \
-        -i $AUDIO_PIPE \
+        -f lavfi -i anullsrc=r=44100:cl=stereo \
         -c:v libx264 \
         -preset ultrafast \
         -tune stillimage \
@@ -87,35 +88,35 @@ stream_video() {
         -ac 2 \
         -shortest \
         -f flv \
-        -t $DURATION_SECONDS \
-        "$RTMP_FULL" &
-    
-    FFMPEG_PID=$!
-    echo "🎬 FFmpeg PID: $FFMPEG_PID"
-}
-
-# Cleanup function
-cleanup() {
-    echo "🛑 Shutting down..."
-    kill $AUDIO_PID 2>/dev/null || true
-    kill $FFMPEG_PID 2>/dev/null || true
-    rm -f $AUDIO_PIPE
-    echo "👋 Goodbye!"
-}
-
-trap cleanup EXIT INT TERM
-
-# Start streaming
-stream_audio
-sleep 2
-stream_video
+        -t "$DURATION_SECONDS" \
+        "$RTMP_FULL"
+else
+    # Stream with real audio
+    ffmpeg \
+        -re \
+        -loop 1 \
+        -i "$BACKGROUND_IMAGE" \
+        -reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5 \
+        -i "$AUDIO_URL" \
+        -c:v libx264 \
+        -preset ultrafast \
+        -tune stillimage \
+        -b:v 1500k \
+        -maxrate 2000k \
+        -bufsize 3000k \
+        -pix_fmt yuv420p \
+        -g 60 \
+        -c:a aac \
+        -b:a 128k \
+        -ar 44100 \
+        -ac 2 \
+        -map 0:v:0 \
+        -map 1:a:0 \
+        -shortest \
+        -f flv \
+        -t "$DURATION_SECONDS" \
+        "$RTMP_FULL"
+fi
 
 echo ""
-echo "🎬 Stream is LIVE!"
-echo "⏰ Will run for ${DURATION_HOURS} hours"
-echo ""
-
-# Wait for FFmpeg to finish
-wait $FFMPEG_PID
-
-echo "⏰ Duration reached, shutting down..."
+echo "⏰ Stream ended."
