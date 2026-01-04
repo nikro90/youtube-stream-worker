@@ -43,18 +43,29 @@ function startOverlayServer() {
     return new Promise((resolve) => {
         const overlayPath = path.join(__dirname, 'overlay.html');
 
+        console.log(`📂 Looking for overlay at: ${overlayPath}`);
+        console.log(`📂 File exists: ${fs.existsSync(overlayPath)}`);
+
         overlayServer = http.createServer((req, res) => {
-            if (req.url === '/' || req.url === '/overlay.html') {
+            // Parse URL to handle query strings
+            const urlPath = req.url.split('?')[0];
+
+            console.log(`📥 Request: ${req.url} -> Path: ${urlPath}`);
+
+            if (urlPath === '/' || urlPath === '/overlay.html') {
                 fs.readFile(overlayPath, (err, data) => {
                     if (err) {
+                        console.error(`❌ Error reading overlay: ${err.message}`);
                         res.writeHead(500);
-                        res.end('Error loading overlay');
+                        res.end('Error loading overlay: ' + err.message);
                         return;
                     }
+                    console.log(`✅ Serving overlay.html (${data.length} bytes)`);
                     res.writeHead(200, { 'Content-Type': 'text/html' });
                     res.end(data);
                 });
             } else {
+                console.log(`⚠️ 404 for: ${urlPath}`);
                 res.writeHead(404);
                 res.end('Not found');
             }
